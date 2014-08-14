@@ -265,7 +265,7 @@ var Spry = function (tpl, opts, scope) {
 
     // Will return a full cache copy (static render) of the template if the last render was less than
     // fullCacheLifetime ms.
-    fullCacheLifetime: 1,
+    fullCacheLifetime: 2,
 
     // Write the output to file after each render?
     output: false,

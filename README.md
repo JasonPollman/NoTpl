@@ -34,20 +34,23 @@ var spry = require('spry');
 var options = { style: 'compressed' };
 var scope = {
   
-  foo: 1,
-  bar: 2,
+  foo: 'foo',
+  bar: 'bar',
 
   // etc. etc.
 }
 
 // Create the template
-var template = spry.new('path/to/template.html', options, scope);
+var template = spry.new('test.html', options, scope);
 var output1 = template.render();
+
+scope.foo = 'baz';
 
 // Now, change scope.foo and re-render
 var output2 = template.render();
 
 // Do whatever with output... perhaps, pass it to the request.
+console.log(output1, output2);
 ```
 
 > output1: ```html <html><head></head><body><div> foo bar </div></body></html>```
@@ -80,7 +83,7 @@ A list of keys for the 'options' object.
 - **partialCacheLifetime**: 
   The time (ms) to return a partial render (just executing the template's javascript function), rather than performing a full-render. *(default: Number.INFINITY)*
 - **fullCacheLifetime**
-  The time (ms) that Spry will return the static cached output of a template rather than re-render it. Takes an integer value from 5 - Number.INFINITY. Note: The lower this setting, the higher the risk of an infinite loop if two template circularly reference each other (although unlikely). *(default: 10)*
+  The time (ms) that Spry will return the static cached output of a template rather than re-render it. Takes an integer value from 5 - Number.INFINITY. Note: The lower this setting, the higher the risk of an infinite loop if two template circularly reference each other (although unlikely). *(default: 2)*
 - **output**:
   Write the template output to file? *(default: false)*
 - **outputFormat**:
