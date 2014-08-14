@@ -1,22 +1,22 @@
 /**
- * @file    - spry.js
+ * @file    - notpl.js
  * @author  - Jason James Pollman
  * @created - 8/13/14
  *
- * > Spry: A fast, simple JavaScript templating solution.
+ * > NoTpl: A fast, simple JavaScript templating solution.
  * ----------------------------------------------------------------------------------------------
  * This project's aim is to mimic the flexibility of PHP's ability to insert code directly into
  * HMTL — that is, to start and stop the parser. It is also an attempt to create a *simple*
  * JavaScript templating solution — where you don't have to learn, esentially, another
  * language or API.
  * 
- * Spry does this. Like PHP, you can insert Javascript directly into the code by using
+ * NoTpl does this. Like PHP, you can insert Javascript directly into the code by using
  * delimiter tags (<$ and $> by default). Unlike using <script> tags, this can be done in
  * node from the backend. You also don't have to know anything other than js and html.
  *
  * > How it works:
  * ----------------------------------------------------------------------------------------------
- * As a template file is scanned, Spry breaks the template down into static (html) and 
+ * As a template file is scanned, NoTpl breaks the template down into static (html) and 
  * dynamic (js) parts. The static parts are inserted into the js parts as they are parsed
  * as arguments to a "print" function which simply adds to the template output.
  * Once the file scanning is complete, the js parts molded into a single function
@@ -29,14 +29,14 @@
  *
  * > Example Useage:
  * ----------------------------------------------------------------------------------------------
- * // Grab the spry object
- * var spry = require('spry');
+ * // Grab the NoTpl object
+ * var NoTpl = require('NoTpl');
  *
  * var options = {}   // See options below...
  * var scope = {}     // variables to pass into the template
  *
  * // Create the template
- * var template = spry.new('path/to/template.html', options, scope);
+ * var template = NoTpl.new('path/to/template.html', options, scope);
  *
  * // Render the template
  * var output = template.render();
@@ -147,13 +147,13 @@ function clone (obj) {
 
 
 /* -------------------------------------------------------------------
- * CLASS Spry
+ * CLASS NoTpl
  * A full javascript/html templating solution...
  *
  * For all practical purposes the phrase 'tpl' means 'template'
  * and the phrase 'opts' means 'options' throughout this script.
  * ------------------------------------------------------------------- */
-var Spry = function (tpl, opts, scope) {
+var NoTpl = function (tpl, opts, scope) {
 
   // For scope resolution
   var self = this;
@@ -165,7 +165,7 @@ var Spry = function (tpl, opts, scope) {
    * ------------------------------------------------------------------- */
   var config = {
 
-    APPNAME:  'Spry',
+    APPNAME:  'NoTpl',
     VERSION:  '0.1.0',
 
     // Output messages to the stdout.
@@ -445,7 +445,7 @@ var Spry = function (tpl, opts, scope) {
   // so if the checksum of the file is the same,
   // we can just execute the template js function,
   // rather than perform a scan all over again.
-  SpryMgr.cache[tid] = {
+  NoTplMgr.cache[tid] = {
     get tid() { return tid; },
     get path() { return filename; },
     get tpl() { return self; },
@@ -534,7 +534,7 @@ var Spry = function (tpl, opts, scope) {
 
     // If the template is in cache, and has been rendered once before, and we are within the full cache lifetime,
     // then return the static output from the last render.
-    if(SpryMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime)) {
+    if(NoTplMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime)) {
       
       // Start the render timer.
       stats.lastRenderStartTime = Date.now();
@@ -553,7 +553,7 @@ var Spry = function (tpl, opts, scope) {
 
     // If the template is in cache, and has been rendered once before, and we are within the partial cache lifetime,
     // then execute the js function again, and return the new rendered output.
-    else if(SpryMgr.cache[tid] && stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime) {
+    else if(NoTplMgr.cache[tid] && stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime) {
 
       // Start the render timer.
       stats.lastRenderStartTime = Date.now();
@@ -948,16 +948,16 @@ var Spry = function (tpl, opts, scope) {
     // Warn the user about circular rendering...
     // It's okay, the render cache will stop the infinite loop,
     // but still kind of pointless, right?
-    if(SpryMgr.cache[newTplId] && !SpryMgr.cache[newTplId].warned) {
-      report.MSG_RENDER_RECURSIVE_LOOP(SpryMgr.cache[newTplId].tpl);
-      SpryMgr.cache[newTplId].warned = true;
+    if(NoTplMgr.cache[newTplId] && !NoTplMgr.cache[newTplId].warned) {
+      report.MSG_RENDER_RECURSIVE_LOOP(NoTplMgr.cache[newTplId].tpl);
+      NoTplMgr.cache[newTplId].warned = true;
     }
 
     // If the template is in the cache, push the cached-copy.render() to the output,
     // otherwise create a new template.
-    rendered.push((SpryMgr.cache[newTplId]) ?
-      SpryMgr.cache[newTplId].tpl.render() :
-      SpryMgr.new(newTpl, newOpts, newScope).render());
+    rendered.push((NoTplMgr.cache[newTplId]) ?
+      NoTplMgr.cache[newTplId].tpl.render() :
+      NoTplMgr.new(newTpl, newOpts, newScope).render());
 
   } // End render()
 
@@ -982,17 +982,17 @@ var Spry = function (tpl, opts, scope) {
   // So we can chain...
   return this;
 
-} // End Spry
+} // End NoTpl
 
 
 /* -------------------------------------------------------------------
- * OBJECT SpryMgr
- * A wrapper for the Spry class.
+ * OBJECT NoTplMgr
+ * A wrapper for the NoTpl class.
  *
- * Stores the template cache, and abstracts the Spry class into
+ * Stores the template cache, and abstracts the NoTpl class into
  * basic CRUD operations.
  * ------------------------------------------------------------------- */
-var SpryMgr = {
+var NoTplMgr = {
 
   // Stores all templates that have been rendered.
   cache: {},
@@ -1015,7 +1015,7 @@ var SpryMgr = {
   // Create a template, or if one exists, overwrite it.
   new: function (tpl, opts, scope) {
     var template = (opts && !opts.code) ? fs.readFileSync(tpl).toString() : tpl;
-    return ((this.cache[checksum(template)]) ? this.cache[checksum(template)].tpl : new Spry(tpl, opts, scope));
+    return ((this.cache[checksum(template)]) ? this.cache[checksum(template)].tpl : new NoTpl(tpl, opts, scope));
 
   }, // End new()
 
@@ -1031,6 +1031,6 @@ var SpryMgr = {
 
   }, // End delete()
 
-} // End SpryMgr
+} // End NoTplMgr
 
-module.exports = SpryMgr;
+module.exports = NoTplMgr;

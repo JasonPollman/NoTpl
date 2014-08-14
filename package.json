@@ -1,19 +1,20 @@
 {
-  "name": "spry",
-  "main": "spry.js",
+  "name": "NoTpl",
+  "main": "notpl.js",
   "licence": "MIT",
-  "description": "JavaScript Serverside Template Engine",
+  "description": "The \"No Template\" Javascript Templating Engine",
   "keywords": [
-    "spry",
+    "notpl",
     "template",
     "engine",
-    "serverside",
-    "render"
+    "server",
+    "render",
+    "html"
   ],
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/PuffNStuff/Spry.git"
+    "url": "https://github.com/PuffNStuff/NoTpl.git"
   },
   "author": {
     "name": "Jason Pollman",
