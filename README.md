@@ -17,7 +17,7 @@ NoTpl aims to do just that with Node & JavaScript.
 * [Developers](#dev)
 
 
-## <a name="useage"></a>About NoTpl:
+## <a name="about"></a>About NoTpl:
 Most JavaScript template engines such as Jade, doT, or Mustache require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
 
 NoTpl's philsophy is: *since a page is rendered by the browser in HTML, it should be (at least partially) written in HTML.* NoTpl removes "the middle man" and allows you to write **full** JavaScript within HTML documents (similar to PHP).
@@ -173,8 +173,8 @@ A list of keys for the 'options' object.
 - **outputExt**:
   * The file extension of the output file. *(default: 'html')*
 
-## Developers
+## <a name="dev"></a>Developers
 * "Jason Pollman"
   - <JPPuffNStuff@gmail.com>
-  - https://github.com/pengwynn
+  - https://github.com/PuffNStuff
 
