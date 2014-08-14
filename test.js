@@ -1,5 +1,5 @@
 // Grab the spry object
-var spry = require('./spry.js');
+var notpl = require('./notpl.js');
 
 // Set your options, and scope to pass into the template
 var options = { style: 'compressed' };
@@ -12,7 +12,7 @@ var scope = {
 }
 
 // Create the template
-var template = spry.new('test.html', options, scope);
+var template = notpl.new('test.html', options, scope);
 var output1 = template.render();
 
 scope.foo = 'baz';
