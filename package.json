@@ -1,0 +1,28 @@
+{
+  "name": "spry",
+  "main": "spry.js",
+  "licence": "MIT",
+  "description": "JavaScript Serverside Template Engine",
+  "keywords": [
+    "spry",
+    "template",
+    "engine",
+    "serverside",
+    "render"
+  ],
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PuffNStuff/Spry.git"
+  },
+  "author": {
+    "name": "Jason Pollman",
+    "email": "JPPuffNStuff@gmail.com"
+  },
+  "dependencies": {
+    "cli-color": "~0.3.2"
+  },
+  "scripts": {
+    "test": "node ./tests"
+  }
+}

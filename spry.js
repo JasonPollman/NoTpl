@@ -166,7 +166,7 @@ var Spry = function (tpl, opts, scope) {
   var config = {
 
     APPNAME:  'Spry',
-    VERSION:  '1.0.0',
+    VERSION:  '0.1.0',
 
     // Output messages to the stdout.
     // Depending on the options.reporting parameter, messages may or may not print,
@@ -670,8 +670,8 @@ var Spry = function (tpl, opts, scope) {
       switch(i) {
         case 'fullCacheLifetime':
 
-          if(opts[i] < 5) {
-            log('warn', 'The full cache liftime must be >= 5ms. This option has been ignored.');
+          if(opts[i] < options.fullCacheLifetime) {
+            log('warn', 'The full cache liftime must be >= ' + options.fullCacheLifetime + 'ms. This option has been ignored.');
             delete opts[i];
           }
 
@@ -739,7 +739,7 @@ var Spry = function (tpl, opts, scope) {
       if(!inquotesSingle && s.peek() == '"') inquotesDouble = !inquotesDouble;
 
       // If we see the stop delimiter upahead, stop "listening" for js.
-      if(s.lookahead(options.delimiterStop.length - 1) == options.delimiterStop) {
+      if(s.lookahead(options.delimiterStop.length - 1) == options.delimiterStop && !inquotesDouble && !inquotesSingle) {
 
         l = false;
 
@@ -830,8 +830,6 @@ var Spry = function (tpl, opts, scope) {
       .replace(/;+/g, ';')
       // Remove spacing from around curly brackets
       .replace(/(\s+)?(\{|\})(\s+)?/g, '$2')
-
-  fs.writeFileSync('test.js', jsPreRender);
 
     return jsPreRender;
 
@@ -1016,7 +1014,7 @@ var SpryMgr = {
 
   // Create a template, or if one exists, overwrite it.
   new: function (tpl, opts, scope) {
-    var template = (!opts.code) ? fs.readFileSync(tpl).toString() : tpl;
+    var template = (opts && !opts.code) ? fs.readFileSync(tpl).toString() : tpl;
     return ((this.cache[checksum(template)]) ? this.cache[checksum(template)].tpl : new Spry(tpl, opts, scope));
 
   }, // End new()
