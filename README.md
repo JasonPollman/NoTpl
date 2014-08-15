@@ -23,6 +23,7 @@ NoTpl aims to do just that with Node & JavaScript.
     * [Properties](#notpl-properties)
     * [Methods](#notpl-methods)
 * [Options](#options)
+* [To Do...](#todo)
 * [Developers](#dev)
 
 
@@ -149,7 +150,7 @@ Within each template NoTpl provides a few pre-defined helper functions. **Do not
   * Render another template from within this template. Note that the scope from the current template will be unavailable to the new template unless you explicitly pass it the `scope` object.
 
 
-<a name="examples"></a>### Examples
+###<a name="examples"></a> Examples
 ###### Using `print`:
 ```
 <!-- helloworld.html -->
@@ -180,8 +181,7 @@ Rendering this template will produce:
     $>
   </body>
 </html>
-```
-```
+
 <!-- Template #2 (names.html): -->
 <div id="people">
   <$ var people = scope; $>
@@ -196,7 +196,8 @@ console.log(output);
 ```
 
 **Rendering this template will produce:**
-> ```<!DOCTYPE html>
+```
+<!DOCTYPE html>
 <html>
   <head>
   </head>
@@ -207,7 +208,8 @@ console.log(output);
       <div id="name-2">Gates, Bill</div>
     </div>
   </body>
-</html>```
+</html>
+```
 
 
 
@@ -245,7 +247,7 @@ The `NoTpl` class is the actual template class.
 - **toString()**
   * Returns the template's tid and filename.
 - **update()**
-  * Returns a partial render of the template, if it has been fully rendered at least once.
+  * Returns a partial render of the template if it has been fully rendered already, null otherwise.
 - **output()**
   * Returns the output of the last render.
 
@@ -296,8 +298,14 @@ A list of keys for the 'options' object.
 - **forceRender**
   * Force the template to render fully. *(default: undefined)*
 
-## <a name="dev"></a>Developers
-* "Jason Pollman"
+### <a name="todo"></a>To Do...
+* Better Error Handling:
+  - Figure out a way to print template line numbers in thrown errors.
+  - Better error detection/repair.
+* Figure out a way to make the arguments `print`,`render`, and `echo` un-reassignable (immutable).
+* **Integrate NoTpl for the client-side.**
+
+### <a name="dev"></a>Developers
+* Jason "PuffNStuff" Pollman
   - <JPPuffNStuff@gmail.com>
   - https://github.com/PuffNStuff
-
