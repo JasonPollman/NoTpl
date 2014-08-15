@@ -28,7 +28,7 @@ NoTpl aims to do just that with Node & JavaScript.
 
 
 ## <a name="install"></a>Install:
-> npm install notpl
+> $ npm install notpl
 
 ## <a name="about"></a>About NoTpl:
 Most JavaScript template engines such as Jade, doT, or Mustache require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
