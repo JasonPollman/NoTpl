@@ -67,7 +67,7 @@ Additionally, you can use node modules from within templates using `require()`.
 #### <a name="render"></a>2. Render the template:
 
 ```JavaScript
-// Grab the spry object
+// Grab the notpl object
 var notpl = require('notpl');
 
 // Set your options, and scope to pass into the template
@@ -117,7 +117,7 @@ console.log(output1, output2);
     <div id="some-file-content">
       <$ // Read a file's contents and print it within this div..
         var fs = require('fs');
-        print(fs.readSync('somefile.txt').toString());
+        print(fs.readFileSync('somefile.txt').toString());
       $>
     </div>
     <$ for(var i in scope.users): ?>
@@ -138,7 +138,7 @@ A list of keys for the 'options' object.
 - **useAbsolutePaths**:
   * Use absolute path when information is output to the console? *(default: false)*
 - **code**:
-  * Used to render snippets rather than files. If code is true, Spry will render the string provided rather than try to load a file. *(default: false)*
+  * Used to render snippets rather than files. If code is true, NoTpl will render the string provided rather than try to load a file. *(default: false)*
 - **reporting**:
   * Level of console information output to the stdout. Takes an interger value. (default: 2)
   * Options:
@@ -158,7 +158,7 @@ A list of keys for the 'options' object.
 - **partialCacheLifetime**: 
   * The time (ms) to return a partial render (just executing the template's javascript function), rather than performing a full-render. *(default: Number.INFINITY)*
 - **fullCacheLifetime**
-  * The time (ms) that Spry will return the static cached output of a template rather than re-render it. Takes an integer value from 5 - Number.INFINITY. Note: The lower this setting, the higher the risk of an infinite loop if two template circularly reference each other (although unlikely). *(default: 2)*
+  * The time (ms) that NoTpl will return the static cached output of a template rather than re-render it. Takes an integer value *(default: 0 [0 = Never send just static, unless a circular reference is found])*
 - **output**:
   * Write the template output to file? *(default: false)*
 - **outputFormat**:

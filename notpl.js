@@ -98,7 +98,7 @@ function HTMLEncode (str) {
  */
 function timestamp () {
   var now = new Date();
-  return (pad(now.getHours(), 2) + ":" + pad(now.getMinutes(), 2) + ":" + pad(now.getSeconds(), 2) + " > ");
+  return (pad(now.getHours(), 2) + ":" + pad(now.getMinutes(), 2) + ":" + pad(now.getSeconds(), 2) + ":" + pad(now.getMilliseconds(), 2) + " > ");
 }
 
 
@@ -173,6 +173,14 @@ var NoTpl = function (tpl, opts, scope) {
     // as defined by the end user. See: 'var log' below.
     messages: {
 
+      get RENDER_BEGIN () {
+        log('notice 3', '---------> Render of ' + self.toString() + ' started.');
+      },
+
+      get RENDER_END () {
+        log('notice 3', '---------> Render of ' + self.toString() + ' completed (' + stats.lastRenderTime + ' ms).\n');
+      },
+
       get MSG_RENDER_SUCCESS () {
         log('notice', self.toString() + ' has been fully rendered (' + stats.lastRenderTime + ' ms).');
       },
@@ -185,8 +193,24 @@ var NoTpl = function (tpl, opts, scope) {
         log('notice', self.toString() + ' has been returned statically (' + stats.lastRenderTime + ' ms).');
       },
 
-      get MSG_RENDER_FAILURE_UNEXPECTED () {
-        log('error', 'Rendering of ' + self.toString() + ' has unexpectely failed (line:' + s.line()[0] + ').');
+      get MSG_DELIMITER_TOO_SHORT () {
+        log('warn', 'Using a single character as a delimiter is not recommended! Please use 2 or more characters.\n*** This can potentially break your code! ***');
+      },
+
+      get MSG_DELIMITER_MISMATCH_NO_STOP_DELIMITER () {
+        log('error', "Expecting '" + options.delimiterStop + "'. Reached the end of file without matching closing tag.");
+      },
+
+      get MSG_DELIMITER_MISMATCH_STOP_WITHOUT_START () {
+        log('error', "Unexpected '" + options.delimiterStop + "'. Found closing tag, without matching opening tag.");
+      },
+
+      get MSG_DELIMITER_MISMATCH_START_WITHOUT_STOP () {
+        log('error', "Unexpected '" + options.delimiterStart + "'. Found opening tag, without matching closing tag.");
+      },
+
+      MSG_DELIMITER_POTENTIAL_BREAK: function (delim) {
+        log('warn', 'Using \'' + delim + '\' as a delimiter is not recommended.\n*** This can potentially break your code! ***');
       },
 
       MSG_FUNCTION_SYNTAX_ERROR_DETECTED_FIXED: function (e) {
@@ -194,12 +218,12 @@ var NoTpl = function (tpl, opts, scope) {
       },
 
       MSG_FUNCTION_ERROR_CAUGHT: function (e) {
-        log('error', e.name + ' in ' + self.toString() + '. Rendering skipped, with message: \'' + e.message + '\'.');
+        log('error', e.name + ' in ' + self.toString() + '. Rendering skipped, with message:\n\'' + e.message + '\'.');
       },
 
       MSG_RENDER_RECURSIVE_LOOP: function (template) {
         log('warning', self.toString() + ' and ' + template.toString() + ' recursively reference each other.\nInfinite loop detected and avoided.');
-      },
+      },      
 
     } // End messages object
 
@@ -249,7 +273,7 @@ var NoTpl = function (tpl, opts, scope) {
     // RECOMMENDED SETTING: true.
     // This could save a parent template, should a child template called with render() from within the
     // template fail, however, that still will not produce the desired output.
-    haltOnError      : false,
+    haltOnError      : true,
 
     // *** Template Cache Types: Partial & Full ***
     // ------------------------------------------------------------------------------------------------------
@@ -261,11 +285,11 @@ var NoTpl = function (tpl, opts, scope) {
 
     // Will return a partial cache (partial render) of the template if the last render was less than
     // partialCacheLifetime ms.
-    partialCacheLifetime: 1000,
+    partialCacheLifetime: 30000,
 
     // Will return a full cache copy (static render) of the template if the last render was less than
     // fullCacheLifetime ms.
-    fullCacheLifetime: 2,
+    fullCacheLifetime: 0,
 
     // Write the output to file after each render?
     output: false,
@@ -405,7 +429,12 @@ var NoTpl = function (tpl, opts, scope) {
 
     } // End switch block
 
-    console.log(cli.xterm(color)(typeOutput + timestamp() + msg));
+    if(type == 'error' && options.haltOnError) {
+      throw new Error(cli.xterm(color)(typeOutput + timestamp() + msg));
+    }
+    else {
+      console.log(cli.xterm(color)(typeOutput + timestamp() + msg));
+    }
 
   } // End log(type, msg)
 
@@ -441,19 +470,30 @@ var NoTpl = function (tpl, opts, scope) {
   // A temp to gather js strings while listening only.
   var jsString = "";
 
+  // To detect circular referencing of templates
+  // when render() is called within this template,
+  // the child template's tid will be pushed here.
+  // If both have each other in their children arrays
+  // then there is an infinite rendering loop =>
+  // return static content to stop loop.
+  var children = [];
+
   // Add the template to the template cache,
   // so if the checksum of the file is the same,
   // we can just execute the template js function,
   // rather than perform a scan all over again.
   NoTplMgr.cache[tid] = {
-    get tid() { return tid; },
-    get path() { return filename; },
-    get tpl() { return self; },
-    get output() { return cleanupOutput(); },
+
+    get tid()             { return tid; },
+    get path()            { return filename; },
+    get tpl()             { return self; },
+    get children()        { return children; },
+    get output()          { return cleanupOutput(); },
     get lastFullRender () { return lastFullRender; },
-    get lastRender() { return lastRender; },
-    get lastRenderType() { return lastRenderType; }
-  }
+    get lastRender()      { return lastRender; },
+    get lastRenderType()  { return lastRenderType; }
+
+  } // End NoTplMgr.cache[tid]
 
   // Will hold the scanner object, to tokenize the template input.
   var s;
@@ -522,9 +562,16 @@ var NoTpl = function (tpl, opts, scope) {
 
 
   /**
+   * Manually perform a partial render
+   */
+  self.update = function () { return partialRender(); }
+
+
+  /**
    * Get the rendered output as a string
    */
   self.output = function() { return cleanupOutput() }
+
 
   /**
    * Render the template
@@ -532,114 +579,37 @@ var NoTpl = function (tpl, opts, scope) {
    */
   self.render = function (opts) {
 
+    var outputString = "";
+
+    if(!opts) opts = {};
+
+    if(!opts.rRender) report.RENDER_BEGIN;
+
     // If the template is in cache, and has been rendered once before, and we are within the full cache lifetime,
     // then return the static output from the last render.
-    if(NoTplMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime)) {
+    if((opts.recursiveReference == true) || (!opts.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime))) {
       
-      // Start the render timer.
-      stats.lastRenderStartTime = Date.now();
-
-      staticRenderCount++;
-      lastRenderType = 's';
-
-      // End the render timer.
-      stats.lastRenderStopTime = Date.now();
-      stats.renderTimes.push([stats.lastRenderTime, 's']);
-
-      // Log the successful render to the console, if options.reporting > 2
-      report.MSG_STATIC_SUCCESS;
+      // Perform a static render
+      outputString = staticRender()
 
     } // End if block
 
     // If the template is in cache, and has been rendered once before, and we are within the partial cache lifetime,
     // then execute the js function again, and return the new rendered output.
-    else if(NoTplMgr.cache[tid] && stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime) {
+    else if(!opts.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime)) {
 
-      // Start the render timer.
-      stats.lastRenderStartTime = Date.now();
-
-      // Execute the function again, to produce the partial output.
-      functify();
-
-      partialRenderCount++;
-      lastRenderType = 'p';
-
-      // End the render timer.
-      stats.lastRenderStopTime = Date.now();
-      stats.renderTimes.push([stats.lastRenderTime, 'p']);
-
-      // Log the successful render to the console, if options.reporting > 2
-      report.MSG_PARTIAL_SUCCESS;
+      // Perform a partial render
+      outputString = partialRender();
 
     }
-    
-    // <------------------------------------- PERFORM A FULL RENDER -------------------------------------> //
-
     else {
-      // Add the new user options, if any.
-      setOptions(opts);
+      
+      // Perform a full render
+      outputString = fullRender()
 
-      // Start the render timer.
-      stats.lastRenderStartTime = Date.now();
-
-      // Flush any variables set by the last render.
-      renderReset();
-
-      // Begin scanning the template file
-      while(!s.eof()) {
-
-        // Determine if we are listening for js at the current token
-        listening();
-
-        // We have to check this again, since listening() can advance
-        // the scanner.
-        if(s.eof()) break;
-
-        // We have to call this *again* in the case that we have 2 scripts back-to-back...
-        listening();
-
-        // We have to check this again, since listening() can advance
-        // the scanner.
-        if(s.eof()) break;
-
-        // If listening, add the token to the jsString,
-        // otherwise add it to the htmlString.
-        (l) ? jsString += s.peek() : htmlString += s.peek();
-
-        // Advance the scanner
-        s.next();
-
-      } // End while(!scanner.eof())
-
-      // Flush out any remaining html string
-      if(htmlString != "") {
-        html.push(htmlString);
-        pushJs(printString());
-      }
-
-      // Flush out any remaining js string
-      if(jsString) pushJs(jsString + '\n', true);
-
-      // Create a function from the js array, and execute it.
-      functify();
-
-      lastFullRender = Date.now();
-
-      // Increment the times the template has been rendered.
-      fullRenderCount++;
-      lastRenderType = 'f';
-
-      // Stop the render timer.
-      stats.lastRenderStopTime = Date.now();
-      stats.renderTimes.push([stats.lastRenderTime, 'f']);
-
-      // Report the successful render to the end user if options.reporting > 2
-      report.MSG_RENDER_SUCCESS;
-    }
+    } // End if/else block
 
     lastRender = Date.now();
-
-    var clean = cleanupOutput();
 
     if(options.output && options.outputFormat) {
       var destination = options.outputFormat.join('-');
@@ -655,10 +625,138 @@ var NoTpl = function (tpl, opts, scope) {
       fs.writeFileSync(destination, clean);
     }
 
+    if(!opts.rRender) report.RENDER_END;
+
     // Return the cleaned up rendered result.
-    return clean;
+    return outputString;
 
   } // End self.render()
+
+
+  /**
+   * Perform a full render
+   */
+  var fullRender = function() {
+
+    // Add the new user options, if any.
+    setOptions(opts);
+
+    // Start the render timer.
+    stats.lastRenderStartTime = Date.now();
+
+    // Flush any variables set by the last render.
+    renderReset();
+
+    // Begin scanning the template file
+    while(!s.eof()) {
+
+      // Determine if we are listening for js at the current token
+      listening();
+
+      // We have to check this again, since listening() can advance
+      // the scanner.
+      if(s.eof()) break;
+
+      // We have to call this *again* in the case that we have 2 scripts back-to-back...
+      listening();
+
+      // We have to check this again, since listening() can advance
+      // the scanner.
+      if(s.eof()) break;
+
+      // If listening, add the token to the jsString,
+      // otherwise add it to the htmlString.
+      (l) ? jsString += s.peek() : htmlString += s.peek();
+
+      // Advance the scanner
+      s.next();
+
+    } // End while(!scanner.eof())
+
+    // Got a start delimeter, but no end to match it.
+    if(l && s.eof()) report.MSG_DELIMITER_MISMATCH_NO_STOP_DELIMITER;
+
+
+    // Flush out any remaining html string
+    if(htmlString != "") {
+      html.push(htmlString);
+      pushJs(printString());
+    }
+
+    // Flush out any remaining js string
+    if(jsString) pushJs(jsString + '\n', true);
+
+    // Create a function from the js array, and execute it.
+    functify();
+
+    lastFullRender = Date.now();
+
+    // Increment the times the template has been rendered.
+    fullRenderCount++;
+    lastRenderType = 'f';
+
+    // Stop the render timer.
+    stats.lastRenderStopTime = Date.now();
+    stats.renderTimes.push([stats.lastRenderTime, 'f']);
+
+    // Report the successful render to the end user if options.reporting > 2
+    report.MSG_RENDER_SUCCESS;
+
+    // Return the cleaned up rendered result.
+    return cleanupOutput();
+
+  } // End fullRender()
+
+
+  /**
+   * Perform a partial render
+   */
+  var partialRender = function () {
+
+    // Start the render timer.
+    stats.lastRenderStartTime = Date.now();
+
+    // Execute the function again, to produce the partial output.
+    functify();
+
+    partialRenderCount++;
+    lastRenderType = 'p';
+
+    // End the render timer.
+    stats.lastRenderStopTime = Date.now();
+    stats.renderTimes.push([stats.lastRenderTime, 'p']);
+
+    // Log the successful render to the console, if options.reporting > 2
+    report.MSG_PARTIAL_SUCCESS;
+
+    // Return the cleaned up rendered result.
+    return cleanupOutput();
+
+  } // End partialRender()
+
+
+  /**
+   * Perform a static render
+   */
+  var staticRender = function () {
+
+    // Start the render timer.
+    stats.lastRenderStartTime = Date.now();
+
+    staticRenderCount++;
+    lastRenderType = 's';
+
+    // End the render timer.
+    stats.lastRenderStopTime = Date.now();
+    stats.renderTimes.push([stats.lastRenderTime, 's']);
+
+    // Log the successful render to the console, if options.reporting > 2
+    report.MSG_STATIC_SUCCESS;
+
+    // Return the cleaned up rendered result.
+    return cleanupOutput();
+
+  } // End staticRender()
 
 
   /**
@@ -667,33 +765,71 @@ var NoTpl = function (tpl, opts, scope) {
   var setOptions = function (opts) {
     for(var i in opts) {
 
+      if(typeof opts[i] == 'string') opts[i] = opts[i].trim();
+
+      // Check for configuration setting issues:
       switch(i) {
+
+        // Check types on all options.
+        case 'reporting':
+          if(typeof opts[i] != 'number') {
+            log('warn', "Option 'reporting' should be an integer, not '" + opts[i].toString() + "'. This option has been ignored.");
+            opts[i] = options[i];
+          }
+          break;
+
+        case 'style':
+          if(typeof opts[i] != 'string') {
+            log('warn', "Option 'style' should be a string, not '" + opts[i].toString() + "'. This option has been ignored.");
+            opts[i] = options[i];
+          }
+          break;
+
+        case 'partialCacheLifetime':
+        case 'fullCacheLifetime':
+          if(typeof opts[i] != 'number') {
+            log('warn', "Option '" + i + "' should be an integer, not '" + opts[i].toString() + "'. This option has been ignored.");
+            opts[i] = options[i];
+          }
+          break;
+
+        case 'outputFormat': 
+          if(!(opts[i] instanceof Array)) {
+            log('warn', "Option '" + i + "' should be an array, not '" + opts[i].toString() + "'. This option has been ignored.");
+            opts[i] = options[i];
+          }
+      }
+
+      // More options checking...
+      switch(i) {
+
+        // Make sure fullCacheLifetime is >= 1 or we could end up with an infinite loop if 2 templates reference
+        // each other.
         case 'fullCacheLifetime':
 
           if(opts[i] < options.fullCacheLifetime) {
             log('warn', 'The full cache liftime must be >= ' + options.fullCacheLifetime + 'ms. This option has been ignored.');
-            delete opts[i];
+            opts[i] = options[i];
           }
 
-          if(opts[i] > 600000) log('notice 2', 'The full cache liftime is > 600000 (10 Minutes). Output will appear static for this duration.');
+          if(opts[i] > 600000) log('notice 2', 'The full cache liftime is > 600000 (10 Minutes). Output will appear *static* for this duration.');
 
           break;
 
+        // Make sure we have a delimiter that won't break the code...
         case 'delimiterStart':
         case 'delimiterStop' :
 
-          if(opts[i] == '}}' ||
-             opts[i] == '{{' ||
-             opts[i] == '))' ||
-             opts[i] == '((' ||
-             opts[i] == '{(' ||
-             opts[i] == ')}' ||
-             opts[i] == '({' ||
-             opts[i] == '})' ||
-             opts[i] == '((' ||
-             opts[i] == '}}')
+          var jsKeywords = ['break', 'case', 'class', 'catch', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'let', 'new', 'return', 'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'];
 
-          log('warn', 'Using \'' + opts[i] + '\' as a delimiter is not recommended. *** This can potentially break your code! ***');
+          if(opts[i].length < 2) report.MSG_DELIMITER_TOO_SHORT;
+          // The following character sequences could break this script:
+          // {{, }}, ((, )), ;;, ==, ++, --, 
+          if(opts[i].match(/(\{{2,})|(\}{2,})|(\({2,})|(\){2,})|(;{2,})|(={2,})|(\+{2,})|(-{2,})/)) report.MSG_DELIMITER_POTENTIAL_BREAK(opts[i]);
+          // Javascript Operators
+          if(opts[i].match(/<=|=>|\+=|-=|\\=|\*=|%=|""|''/)) report.MSG_DELIMITER_POTENTIAL_BREAK(opts[i]);
+          // Javascript Keywords
+          if(jsKeywords.indexOf(opts[i]) > -1) report.MSG_DELIMITER_POTENTIAL_BREAK(opts[i]);
           break;
 
       } // End switch block
@@ -715,6 +851,9 @@ var NoTpl = function (tpl, opts, scope) {
 
     if(!l) { // We are currently not listening
 
+      // Got a closing delimeter, without an opening one...
+      if(s.lookahead(options.delimiterStop.length - 1) == options.delimiterStop) report.MSG_DELIMITER_MISMATCH_STOP_WITHOUT_START;
+
       // If we see the start delimiter upahead, start "listening" for js.
       if(s.lookahead(options.delimiterStart.length - 1) == options.delimiterStart) {
 
@@ -733,6 +872,9 @@ var NoTpl = function (tpl, opts, scope) {
 
     }
     else { // We are currently listening
+
+      // Got an opening delimeter, without a matching closing one...
+      if(s.lookahead(options.delimiterStart.length - 1) == options.delimiterStart) report.MSG_DELIMITER_MISMATCH_START_WITHOUT_STOP;
 
       // Look for a single or double quote. If found, we will either be in, or out of the quotes.
       if(!inquotesDouble && s.peek() == "'") inquotesSingle = !inquotesSingle;
@@ -885,13 +1027,14 @@ var NoTpl = function (tpl, opts, scope) {
     // for security reasons. Also note that the functions print, render, require, and echo are
     // frozen so the end user cannot 'accidentally' overwrite them.
     try { 
-      new Function('print, scope, render, require, echo', '"use strict"\nObject.freeze(print, render, require, echo);\nvar global = undefined;' + jsPreRender).bind(scope || {})(print, scope, render, require, echo);
+      var jsFunction = new Function('print, scope, render, require, echo', '"use strict"\nvar global = undefined;' + jsPreRender).bind(scope || {});
+      jsFunction(print, scope, render, require, echo);
     }
     catch(e) {
 
       // Attempt to repair any forgotten colons or open curly braces after conditional clauses.
       jsPreRender = jsPreRender
-        .replace(/((else if|if|for|while)(\s+)?\((\s+)?(.*?)(\s+)?\)(\s+)?)(?!((.*)?(;)|(\s+)?\{))/g, function($1, $2, $3, $4) {
+        .replace(/((else if|if|for|while)(\s+)?\((.*?)\))(?!((.*?)(;(?!((\s+)?print)))|(\s+)?\{))/g, function($1, $2, $3, $4) {
 
           // Alert the user about the syntax error
           report.MSG_FUNCTION_SYNTAX_ERROR_DETECTED_FIXED('Missing colon/open-curly-bracket after \'' + $1.trim() + '\'');
@@ -900,14 +1043,22 @@ var NoTpl = function (tpl, opts, scope) {
 
         }); // End jsPreRender.replace()
 
-      try {
-        new Function('print, scope, render, require, echo', '"use strict"\nvar global = undefined;' + jsPreRender).bind(scope || {})(print, scope, render, require, echo);
+      try { // Try again now that syntax error was detected.
+
+        var jsFunction = new Function('print, scope, render, require, echo', '"use strict"\nvar global = undefined;' + jsPreRender).bind(scope || {});
+        jsFunction(print, scope, render, require, echo);
       }
       catch(ee) {
 
         // If the user wants to completely stop rendering on error (i.e. options.haltOnError)
         // is set throw the error. Otherwise, try to keep rendering, but report the error.
-        if(!options.haltOnError) { ee.message += ' in ' + filename; throw ee } else { report.MSG_FUNCTION_ERROR_CAUGHT(ee); }
+        if(!options.haltOnError) {
+          report.MSG_FUNCTION_ERROR_CAUGHT(ee);
+        }
+        else {
+          ee.message = cli.xterm(160)(e.message);
+          throw(ee);
+        }
 
       } // End try/catch block
 
@@ -920,14 +1071,14 @@ var NoTpl = function (tpl, opts, scope) {
    * Print:
    * Push all arguments onto the rendered array ('rendered') for output.
    */
-  var print = function () { 
+  var print = function () {
     for(var i in arguments) rendered.push(arguments[i].toString());
 
   } // End print()
 
   // Alias for print...
   var echo = print;
-  
+ 
 
   /**
    * Render a template within a template.
@@ -948,16 +1099,33 @@ var NoTpl = function (tpl, opts, scope) {
     // Warn the user about circular rendering...
     // It's okay, the render cache will stop the infinite loop,
     // but still kind of pointless, right?
-    if(NoTplMgr.cache[newTplId] && !NoTplMgr.cache[newTplId].warned) {
-      report.MSG_RENDER_RECURSIVE_LOOP(NoTplMgr.cache[newTplId].tpl);
-      NoTplMgr.cache[newTplId].warned = true;
-    }
+    if(NoTplMgr.cache[newTplId]) {
 
-    // If the template is in the cache, push the cached-copy.render() to the output,
-    // otherwise create a new template.
-    rendered.push((NoTplMgr.cache[newTplId]) ?
-      NoTplMgr.cache[newTplId].tpl.render() :
-      NoTplMgr.new(newTpl, newOpts, newScope).render());
+      // Add the template as a child to this one.
+      if(children.indexOf(newTplId) < 0) children.push(newTplId);
+
+      // Both templates have each other as children, stop infinite loop by returning static on next render.
+      if((NoTplMgr.cache[newTplId].children.indexOf(tid) > -1) && (NoTplMgr.cache[tid].children.indexOf(newTplId) > -1)) {
+
+        // Warn the end user:
+        if(!NoTplMgr.cache[newTplId].warned) {
+          report.MSG_RENDER_RECURSIVE_LOOP(NoTplMgr.cache[newTplId].tpl);
+          NoTplMgr.cache[newTplId].warned = true;
+          NoTplMgr.cache[tid].warned = true;
+        }
+
+        rendered.push(NoTplMgr.cache[newTplId].tpl.render({ rRender: true, recursiveReference: true }));
+      }
+      // The template is in cache, render it from cache
+      else if(NoTplMgr.cache[newTplId]) {
+        rendered.push(NoTplMgr.cache[newTplId].tpl.render({ rRender: true }));
+      }
+
+    }
+    else { // It is a new template, fully render it.
+      rendered.push(NoTplMgr.new(newTpl, newOpts, newScope).render({ rRender: true }));
+
+    } // End if(NoTplMgr.cache[newTplId]) block
 
   } // End render()
 
