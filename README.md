@@ -1,7 +1,7 @@
 # **NoTpl** (notpl.js)
 #### The "No Template" Javascript Templating Engine
 
-> **Remember the good old days when PHP reigned supreme and you could write your code directly into webpages?**
+> **Remember the "good old days" when PHP reigned supreme and you could write your code directly into webpages?**
 NoTpl aims to do just that with Node & JavaScript.
 
 > Most js template engines require you to learn their *typically tedious* API. Using NoTpl, all you need to know is HTML and JavaScript.
@@ -9,8 +9,8 @@ NoTpl aims to do just that with Node & JavaScript.
 
 ## Contents:
 
+* [Install](#install)
 * [About NoTpl](#about)
-* Installation (*...soon*)
 * [Useage](#useage)
   - [Create a Template](#create)
   - [Render a Template](#render)
@@ -26,6 +26,9 @@ NoTpl aims to do just that with Node & JavaScript.
 * [To Do...](#todo)
 * [Developers](#dev)
 
+
+## <a name="install"></a>Install:
+> npm install notpl
 
 ## <a name="about"></a>About NoTpl:
 Most JavaScript template engines such as Jade, doT, or Mustache require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
