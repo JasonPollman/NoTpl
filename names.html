@@ -1,0 +1,4 @@
+<div id="people">
+  <$ var people = scope; $>
+  <$ for(var i in people) print('<div id="name-' + people[i].id + '">', people[i].name.last, ', ', people[i].name.first, '</div>'); $>
+</div>

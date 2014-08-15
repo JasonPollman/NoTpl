@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body id="page-people">
+    <$ 
+      var people = [
+        { id: 0, name : { first: 'John',  last: 'Doe'   }, sex: 'male' },
+        { id: 1, name : { first: 'Bruce', last: 'Wayne' }, sex: 'male' },
+        { id: 2, name : { first: 'Bill',  last: 'Gates' }, sex: 'male' }
+      ];
+
+      // Note that we passed the scope as the third parameter...
+      render('names.html', {}, people);
+    $>
+  </body>
+</html>

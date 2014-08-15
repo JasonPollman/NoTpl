@@ -10,9 +10,18 @@ NoTpl aims to do just that with Node & JavaScript.
 ## Contents:
 
 * [About NoTpl](#about)
+* Installation (*...soon*)
 * [Useage](#useage)
-  - [Create a template](#create)
-  - [Render a template](#render)
+  - [Create a Template](#create)
+  - [Render a Template](#render)
+  - [Examples](#examples)
+  - [NoTpl Helper Functions](#functions)
+  - [The NoTplMgr Object](#notplmgr)
+    * [Properties](#notplmgr-properties)
+    * [Methods](#notplmgrclass-methods)
+  - [The NoTpl Class](#notpl)
+    * [Properties](#notpl-properties)
+    * [Methods](#notpl-methods)
 * [Options](#options)
 * [Developers](#dev)
 
@@ -34,7 +43,7 @@ Additionally, you can use node modules from within templates using `require()`.
 
 #### <a name="create"></a>1. Create a template file:
 
-```HTML
+```
 <html>
   <head>
   </head>
@@ -50,7 +59,7 @@ Additionally, you can use node modules from within templates using `require()`.
 
 #### ...or using the alternate syntax:
 
-```HTML
+```
 <html>
   <head>
   </head>
@@ -94,14 +103,14 @@ console.log(output1, output2);
 ```
 
 | *var output1 results* | *var output2 results* |
-| ------------ | ----------- |
-| ```HTML <html><head></head><body><div> foo bar </div></body></html>``` | ```HTML <html><head></head><body><div> baz bar </div></body></html>``` |
+| --------------------- | --------------------- |
+| ```<html><head></head><body><div> foo bar </div></body></html>``` | ```<html><head></head><body><div> baz bar </div></body></html>``` |
 
 
 #### 3. Enjoy...
 ###### Use js anywhere in the template!
 
-```HTML
+```
 <!-- Sample Useage -->
 <html>
   <head>
@@ -128,6 +137,118 @@ console.log(output1, output2);
   </body>
 </html>
 ```
+
+### <a name="functions"></a>NoTpl Helper Functions
+Within each template NoTpl provides a few pre-defined helper functions. **Do not reassign these variables!** Doing so could potentially break a template.
+
+- **print(string)**:
+  * Output *string* to the template. Works just like `print` or `echo` in php.
+- **echo(string)**:
+  * Alias for `print`
+- **render(templateFilename, renderOptions, scope)**
+  * Render another template from within this template. Note that the scope from the current template will be unavailable to the new template unless you explicitly pass it the `scope` object.
+
+
+<a name="examples"></a>### Examples
+###### Using `print`:
+```
+<!-- helloworld.html -->
+<div>
+  <$ print('hello world!'); $>
+</div>
+```
+Rendering this template will produce:
+> `<div>hello world!</div>`
+
+###### Render a template from within another template:
+```
+<!-- Template #1 (people.html): -->
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body id="page-people">
+    <$ 
+      var people = [
+        { id: 0, name : { first: 'John',  last: 'Doe'   }, sex: 'male' },
+        { id: 1, name : { first: 'Bruce', last: 'Wayne' }, sex: 'male' },
+        { id: 2, name : { first: 'Bill',  last: 'Gates' }, sex: 'male' }
+      ];
+
+      // Note that we passed the scope as the third parameter...
+      render('names.html', {}, people);
+    $>
+  </body>
+</html>
+```
+```
+<!-- Template #2 (names.html): -->
+<div id="people">
+  <$ var people = scope; $>
+  <$ for(var i in people) print('<div id="name-' + people[i].id + '">', people[i].name.last, ', ', people[i].name.first, '</div>'); $>
+</div>
+```
+```javascript
+// Render people.html...
+var notpl = require('./notpl.js');
+var output = notpl.new('people.html').render();
+console.log(output);
+```
+
+**Rendering this template will produce:**
+> ```<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body id="page-people">
+    <div id="people">
+      <div id="name-0">Doe, John</div>
+      <div id="name-1">Wayne, Bruce</div>
+      <div id="name-2">Gates, Bill</div>
+    </div>
+  </body>
+</html>```
+
+
+
+### <a name="notplmgr"></a>The NoTplMgr Object
+The `NoTplMgr` object is what is actually exported when you call `require` within node. It creates a CRUD like wrapper around the NoTpl class.
+
+##### <a name="notplmgr-properties"></a>Properties:
+- cache
+  * An object that holds a reference to each template.
+- stats
+  * Returns an object that contains stats about each template in the cache, such as the last render duration, the last render type, the number of renders, etc.
+
+##### <a name="notplmgr-methods"></a>Methods:
+- **new(templateFilename, renderOptions, scope)**
+  * Create a new template object (NoTpl object).
+- **get(templateFilename)**
+  * Returns the template with the filename `templateFilename`.
+- **kill(templateObject)**
+  * Remove a template object from the template cache (`NoTplMgr.cache`).
+
+
+### <a name="notpl"></a>The NoTpl Class
+The `NoTpl` class is the actual template class.
+
+##### <a name="notpl-properties"></a>Properties:
+*None accessible from outside the class scope*
+
+##### <a name="notpl-methods"></a>Methods:
+- **render(renderOptions)**
+  * Renders the template with `renderOptions`
+- **getStats()**
+  * Return the `stats` object for this template.
+- **init()**
+  * `NoTpl`'s constructor. Sets the user options and creates a new scanner object. No need to call this explicitly, for any reason.
+- **toString()**
+  * Returns the template's tid and filename.
+- **update()**
+  * Returns a partial render of the template, if it has been fully rendered at least once.
+- **output()**
+  * Returns the output of the last render.
+
 
 ### <a name="options"></a>Options
 A list of keys for the 'options' object.
@@ -172,6 +293,8 @@ A list of keys for the 'options' object.
     - *ext*: The file extension as defined by *options.outputExt*
 - **outputExt**:
   * The file extension of the output file. *(default: 'html')*
+- **forceRender**
+  * Force the template to render fully. *(default: undefined)*
 
 ## <a name="dev"></a>Developers
 * "Jason Pollman"
