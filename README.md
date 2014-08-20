@@ -320,7 +320,7 @@ A list of keys for the 'options' object.
   - Figure out a way to print template line numbers in thrown errors.
   - Better error detection/repair.
 * Figure out a way to make the arguments `print`,`render`, and `echo` un-reassignable (immutable).
-* Fix HTMLEscape() function (as of now, subsequent renders will "double escape" tokens turning the already escaped '&amp;' into '&amp;amp;', for example... so escaping is currently unenabled.)
+* Fix HTMLEscape() function (as of now, subsequent renders will "double escape" tokens turning the already escaped `&amp;` into `&amp;amp;`, for example... so escaping is currently unenabled.)
 
 ### <a name="dev"></a>Developer(s)?
 * Jason "PuffNStuff" Pollman
