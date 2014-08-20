@@ -32,6 +32,10 @@ NoTpl aims to do just that with Node & JavaScript.
 > $ npm install notpl
 
 ## <a name="updates"></a>Updates:
+ * 8/21/14
+  - Bugfixes
+    * Fixed an bug that started parsing when the delimiter was found within quotes.
+    * Testing for server-side (node) use.
  * 8/20/14
   - **Added support for client side rendering.**
     * Moved the scanner class inside the notpl.js file for client side purpose.
