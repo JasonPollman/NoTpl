@@ -34,6 +34,8 @@ NoTpl aims to do just that with Node & JavaScript.
 ## <a name="updates"></a>Updates:
  * 8/21/14
   - Bugfixes
+    * Fixed a bug that prevented changing the delimiters between renders.
+    * Forced full render when delimiters are changed.
     * Fixed an bug that started parsing when the delimiter was found within quotes.
     * Testing for server-side (node) use.
  * 8/20/14
