@@ -312,9 +312,6 @@
   } // End scanner Object Function
 
 
-
-
-  var retrieved = {};
   /* -------------------------------------------------------------------
    * CLASS NoTpl
    * A full javascript/html templating solution...

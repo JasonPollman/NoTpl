@@ -10,6 +10,7 @@ NoTpl aims to do just that with Node & JavaScript.
 ## Contents:
 
 * [Install](#install)
+* [Updates](#updates)
 * [About NoTpl](#about)
 * [Useage](#useage)
   - [Create a Template](#create)
@@ -30,8 +31,19 @@ NoTpl aims to do just that with Node & JavaScript.
 ## <a name="install"></a>Install:
 > $ npm install notpl
 
+## <a name="updates"></a>Updates:
+ * 8/20/14
+  - **Added support for client side rendering.**
+    * Moved the scanner class inside the notpl.js file for client side purpose.
+    * Added notpl.min.js
+  - Bugfixes
+    * Fixed setting 'options.code = true' from throwing error.
+    * Fixed an bug that gave syntax errors when using the '//' comment notation.
+    * Fixed detection of mismatched open/closing delimiters.
+  - Documentation for client side coming soon.
+
 ## <a name="about"></a>About NoTpl:
-Most JavaScript template engines such as Jade, doT, or Mustache require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
+Most JavaScript template engines require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
 
 NoTpl's philsophy is: *since a page is rendered by the browser in HTML, it should be (at least partially) written in HTML.* NoTpl removes "the middle man" and allows you to write **full** JavaScript within HTML documents (similar to PHP).
 
@@ -245,8 +257,6 @@ The `NoTpl` class is the actual template class.
   * Renders the template with `renderOptions`
 - **getStats()**
   * Return the `stats` object for this template.
-- **init()**
-  * `NoTpl`'s constructor. Sets the user options and creates a new scanner object. No need to call this explicitly, for any reason.
 - **toString()**
   * Returns the template's tid and filename.
 - **update()**
@@ -300,15 +310,19 @@ A list of keys for the 'options' object.
   * The file extension of the output file. *(default: 'html')*
 - **forceRender**
   * Force the template to render fully. *(default: undefined)*
+- **name**
+  * Give the template a name for technical purposes, replaces '[native code]' when rendering code. *(default: undefined)*
+- **strict**
+  * Gives the options to set "use strict" in the render function call. Note, this was added for client side support since many browsers behave badly in strict mode. *(default: true)*
 
 ### <a name="todo"></a>To Do...
 * Better Error Handling:
   - Figure out a way to print template line numbers in thrown errors.
   - Better error detection/repair.
 * Figure out a way to make the arguments `print`,`render`, and `echo` un-reassignable (immutable).
-* **Integrate NoTpl for the client-side.**
+* Fix HTMLEscape() function (as of now, subsequent renders will "double escape" tokens turning the already escaped '&amp;' into '&amp;amp;', for example... so escaping is currently unenabled.)
 
-### <a name="dev"></a>Developers
+### <a name="dev"></a>Developer(s)?
 * Jason "PuffNStuff" Pollman
   - <JPPuffNStuff@gmail.com>
   - https://github.com/PuffNStuff
