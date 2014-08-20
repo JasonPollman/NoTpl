@@ -7,11 +7,14 @@
     "notpl",
     "template",
     "engine",
+    "html",
+    "php",
     "server",
+    "client",
     "render",
-    "html"
+    "markup"
   ],
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": {
     "name": "Jason Pollman",
     "email": "JPPuffNStuff@gmail.com"
@@ -19,11 +22,19 @@
   "dependencies": {
     "cli-color": "~0.3.2"
   },
+  "devDependencies": {
+    "chai": ">=1.1.9",
+    "uglify-js": ">=2.4.15"
+  },
   "scripts": {
-    "test": "node ./tests"
+    "test": "node ./tests",
+    "prepublish": "uglifyjs notpl.js -o notpl.min.js -m"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/PuffNStuff/NoTpl"
+  },
+  "config": {
+    "unsafe-perm": true
   }
 }

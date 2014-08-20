@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <!-- Include notpl.min.js -->
+  <script src="../notpl.js"></script>
+  <script>
+    // Create the scope
+    var scope = { x: "foo" } 
+    var x;
+    // Render the page, grab the template:
+    notpl({}, scope, function (error, tpl) { x = tpl; }, function() { /* Do some error handling */ return "Oops. Something went wrong."});
+
+    // Create a function to change the scope after XX seconds...
+    function changeScope() { 
+      
+      setTimeout(function () {
+        
+        scope.x = "bar";
+        // Do something with the rendered page...
+        // We could get fancy and do some animation here or something:
+        document.documentElement.innerHTML = x.render();
+
+      }, 2000);
+
+    } // End changeScope();
+  </script>
+  </head>
+  <body onload="changeScope()" id="<$ print('body-id'); $>">
+    This is the body text.
+    <$ // Comment Comment
+      print(scope.x);
+     $>
+    <$ print('<--->'); var x = ' razzle dazzle'; print(x) $><!-- This comment should be stripped -->
+  </body>
+</html>

@@ -852,18 +852,23 @@
      */
     self.render = function (opts) {
 
+      if(!opts) opts = {};
+
+      // If the user changes the delimiters, we must force a full render.
+      if((opts.delimiterStart && opts.delimiterStart != options.delimiterStart) || (opts.delimiterStop && opts.delimiterStop != options.delimiterStop)) {
+        options.forceFullRender = true;
+      }
+
       // Add the new user options, if any.
       setOptions(opts);
 
       var outputString = "";
 
-      if(!opts) opts = {};
-
-      if(!opts.rRender) report.RENDER_BEGIN;
+      if(!options.rRender) report.RENDER_BEGIN;
 
       // If the template is in cache, and has been rendered once before, and we are within the full cache lifetime,
       // then return the static output from the last render.
-      if((opts.recursiveReference == true) || (!opts.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime))) {
+      if((options.recursiveReference == true) || (!options.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0) && (Date.now() - lastFullRender < options.fullCacheLifetime))) {
         
         // Perform a static render
         outputString = staticRender()
@@ -872,7 +877,7 @@
 
       // If the template is in cache, and has been rendered once before, and we are within the partial cache lifetime,
       // then execute the js function again, and return the new rendered output.
-      else if(!opts.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime)) {
+      else if(!options.forceFullRender && NoTplMgr.cache[tid] && (stats.renderCount.full > 0 && Date.now() - lastFullRender < options.partialCacheLifetime)) {
 
         // Perform a partial render
         outputString = partialRender();
@@ -901,7 +906,7 @@
         fs.writeFileSync(destination, clean);
       }
 
-      if(!opts.rRender) report.RENDER_END;
+      if(!options.rRender) report.RENDER_END;
 
       // Return the cleaned up rendered result.
       return outputString;
@@ -931,7 +936,7 @@
         if(s.eof()) break;
 
         // We have to call this *again* in the case that we have 2 scripts back-to-back...
-        listening();
+        listening(true);
 
         // We have to check this again, since listening() can advance
         // the scanner.
@@ -1038,7 +1043,7 @@
      * If the scanner is listening, output is added to the jsString until it stops listening.
      * Otherwise output is added to the htmlString, until the scanner begins listening again.
      */
-    var listening = function () {
+    var listening = function (ignoreQuotes) {
 
       if(!l) { // We are currently not listening
 
@@ -1070,16 +1075,31 @@
 
         // Got an opening delimiter, without a matching closing one...
         if(s.lookahead(options.delimiterStart.length - 1) == options.delimiterStart &&
-          !(s.lookbehind(1) == '\\' && regexpSpecialChars.indexOf(s.peek()) > -1)) report.MSG_DELIMITER_MISMATCH_START_WITHOUT_STOP;
+          !(s.lookbehind(1) == '\\' && regexpSpecialChars.indexOf(s.peek()) > -1) &&
+          !(inquotesSingle || inquotesDouble)) report.MSG_DELIMITER_MISMATCH_START_WITHOUT_STOP;
 
         // Look for a single or double quote. If found, we will either be in, or out of the quotes.
-        if(!inquotesDouble && s.peek() == "'") inquotesSingle = !inquotesSingle;
-        if(!inquotesSingle && s.peek() == '"') inquotesDouble = !inquotesDouble;
+        if(!ignoreQuotes) {
+
+          if(!inquotesSingle && !inquotesDouble && s.lookbehind(1) != '\\' && s.peek() == "'") {
+            inquotesSingle = true;
+          }
+          else if(inquotesSingle && !inquotesDouble && s.lookbehind(1) != '\\' && s.peek() == "'") {
+            inquotesSingle = false;
+          }
+
+          if(!inquotesDouble && !inquotesSingle && s.lookbehind(1) != '\\' && s.peek() == '"') {
+            inquotesDouble = true;
+          }
+          else if(inquotesDouble && !inquotesSingle && s.lookbehind(1) != '\\' && s.peek() == '"') {
+            inquotesDouble = false; }
+
+        } // End if(!ignoreQuotes)
 
         var unencoded = (s.lookahead(options.delimiterStop.length - 1) == options.delimiterStop);
         var coded = !isNode && (s.lookahead(HTMLEncode(options.delimiterStop, true).length - 1) == HTMLEncode(options.delimiterStop, true))
         // If we see the stop delimiter up-ahead, start "listening" for js.
-        if((unencoded || coded) && !inquotesDouble && !inquotesSingle) {
+        if((unencoded || coded) && !(inquotesDouble || inquotesSingle)) {
 
           l = false;
 
@@ -1199,9 +1219,6 @@
 
       // Reset the jsString and htmlStrings
       jsString = htmlString = "";
-
-      // Adjust options with the user passed options (i.e. 'opts')
-      for(var i in opts) options[i] = opts[i];
 
       // Add the options to the stats object, so the end user can
       // identify "how" the template was rendered.
