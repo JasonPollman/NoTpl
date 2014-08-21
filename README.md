@@ -37,8 +37,9 @@ NoTpl aims to do just that with Node & JavaScript.
 
 ## <a name="updates"></a>Updates:
  * 8/21/14
+  - Added [client-side documentation](#use-client)
   - Bugfixes
-    * Added [client-side documentation](#use-client)
+    * Fixed a bug in options.output, which caused ENOENT error.
     * Fixed a bug that prevented changing the delimiters between renders.
     * Forced full render when delimiters are changed.
     * Fixed a bug that started parsing when the delimiter was found within quotes.

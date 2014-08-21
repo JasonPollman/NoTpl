@@ -95,6 +95,20 @@ describe("NoTpl Server Side Tests\n", function () {
         expect(output).equal("<div id=\"parent\"> Check out this file! <div id=\"child\"> This file is awesome! We were passed: 'foobar!' as the scope.</div></div>");
       });
 
+
+      it("Should output a file when 'options.output' is true.", function () {
+
+        var fs = require('fs');
+
+        var tpl = notpl.new('<div><$ print("hello world") $></div>', { code: true, output: true, outputFormat: ['tid', 'ext'] }, {});
+        var output = tpl.render();
+
+        expect(output).equal("<div>hello world</div>");
+        expect(fs.readFileSync((tpl.tid() + '.html')).toString()).to.equal('<div>hello world</div>');
+        fs.unlinkSync(tpl.tid() + '.html');
+
+      });
+
   });
 
   describe("Template Stats: #stats()", function () {

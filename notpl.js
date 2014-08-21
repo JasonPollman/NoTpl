@@ -108,7 +108,7 @@
         return str;
       }
 
-  } // Ens HTMLEncode()
+  } // End HTMLEncode()
 
 
   /**
@@ -835,6 +835,12 @@
 
 
     /**
+     * Get the template's ID
+     */
+    self.tid = function() { return tid; }
+
+
+    /**
      * Manually perform a partial render
      */
     self.update = function () { return partialRender() }
@@ -896,14 +902,14 @@
         var destination = options.outputFormat.join('-');
 
         destination = destination
-          .replace(/^tid/, tid)
-          .replace(/^atid/, tid.slice(-7))
+          .replace(/\btid\b/, tid)
+          .replace(/\batid\b/, tid.slice(-7))
           .replace(/filename/, path.basename(filename).replace(path.extname(filename), ''))
           .replace(/time/, lastRender)
           .replace(/type/, lastRenderType)
           .replace(/-ext/, '.' + options.outputExt);
 
-        fs.writeFileSync(destination, clean);
+        fs.writeFileSync(destination, outputString);
       }
 
       if(!options.rRender) report.RENDER_END;
