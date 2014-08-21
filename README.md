@@ -13,9 +13,13 @@ NoTpl aims to do just that with Node & JavaScript.
 * [Updates](#updates)
 * [About NoTpl](#about)
 * [Useage](#useage)
-  - [Create a Template](#create)
-  - [Render a Template](#render)
-  - [Examples](#examples)
+  * [Server Side Rendering](#use-server)
+    - [Create a Template](#create-server)
+    - [Render a Template](#render-server)
+    - [Examples](#examples-server)
+  * [Client Side Rendering](#use-client)
+    - [Create & Render a Template](#create-client)
+    - [Examples](#examples-client)
   - [NoTpl Helper Functions](#functions)
   - [The NoTplMgr Object](#notplmgr)
     * [Properties](#notplmgr-properties)
@@ -63,7 +67,10 @@ Additionally, you can use node modules from within templates using `require()`.
 
 ## <a name="useage"></a>Useage:
 
-#### <a name="create"></a>1. Create a template file:
+### <a name="use-server"></a>Server Side:
+---
+
+#### <a name="create-server"></a>1. Create a template file:
 
 ```
 <html>
@@ -72,7 +79,7 @@ Additionally, you can use node modules from within templates using `require()`.
   <body>
     <div>
       <$ for(var i in scope) {
-        print(scope.i);
+        print(scope[i]);
       } $>
     </div>
   </body>
@@ -95,7 +102,7 @@ Additionally, you can use node modules from within templates using `require()`.
 </html>
 ```
 
-#### <a name="render"></a>2. Render the template:
+#### <a name="render-server"></a>2. Render the template:
 
 ```JavaScript
 // Grab the notpl object
@@ -160,18 +167,7 @@ console.log(output1, output2);
 </html>
 ```
 
-### <a name="functions"></a>NoTpl Helper Functions
-Within each template NoTpl provides a few pre-defined helper functions. **Do not reassign these variables!** Doing so could potentially break a template.
-
-- **print(string)**:
-  * Output *string* to the template. Works just like `print` or `echo` in php.
-- **echo(string)**:
-  * Alias for `print`
-- **render(templateFilename, renderOptions, scope)**
-  * Render another template from within this template. Note that the scope from the current template will be unavailable to the new template unless you explicitly pass it the `scope` object.
-
-
-###<a name="examples"></a> Examples
+###<a name="examples-server"></a> Examples
 ###### Using `print`:
 ```
 <!-- helloworld.html -->
@@ -231,6 +227,158 @@ console.log(output);
   </body>
 </html>
 ```
+
+
+### <a name="use-client"></a>Client Side Rendering:
+---
+
+#### <a name="create-client"></a>1. Create and render a template file:
+
+```
+<html>
+  <head>
+    <!-- Include the NoTpl Script -->
+    <script src="notpl.min.js"></script>
+    <script>
+      var scope = { a: 'foo', b: 'bar' }; // The scope to pass to the script
+      var options = {}                    // NoTpl options
+      var callback = function() {}        // A callback to be executed after rendering (and doc.ready).
+      var errorMsg = function() {}        // An errorMsg if the template fails to render (can be string, function, 
+                                          // or an object with the property 'file' to render another template instead).
+      
+      // You MUST call the notpl() function explicitly, otherwise nothing will happen. Note also,
+      // that all arguments are optional.
+      notpl(options, scope, callback, errorMsg);
+    </script>
+  </head>
+  <body>
+    <div>
+      <$ for(var i in scope) {
+        print(scope[i] + " ");
+      } $>
+    </div>
+  </body>
+</html>
+```
+
+| *Render Results* | *Output* |
+| ---------------- | -------- |
+| ```<html><head><script src="../notpl.min.js"></script><script> var scope ={a: 'foo', b: 'bar'} var options ={} var callback = function(){} var errorMsg = function(){} notpl(options, scope, callback, errorMsg); </script></head><body><div> foo bar </div></body></html>``` | foo bar |
+
+
+#### <a name="examples-client"></a>Examples:
+
+###### Printing 'hello world!':
+```<html>
+  <head>
+    <!-- Include the NoTpl Script -->
+    <script src="notpl.min.js"></script>
+    <script>
+      // Call the notpl function to render the page
+      notpl();
+    </script>
+  </head>
+  
+  <body>
+    <$ print('hello world!'); $>
+  </body>
+  
+</html>
+```
+
+###### Render a template within a template:
+Render the child template inside of the parent template using AJAX.
+```
+<!-- parent.html -->
+<html>
+  <head>
+    <!-- Include the NoTpl Script -->
+    <script src="notpl.min.js"></script>
+    <script>
+      // Call the notpl function to render the page
+      notpl();
+    </script>
+  </head>
+  
+  <body>
+    <$ render('child.html', options, scope); $>
+  </body>
+  
+</html>
+
+<!-- child.html -->
+<div>Hello World!</div>
+
+```
+
+**Rendering this template will produce:**
+```
+<head><script src="../notpl.min.js"></script><script>notpl()</script><script> notpl();</script></head><body><div> Hello World!</div></body>
+```
+***and output***
+> Hello World!
+
+
+###### Changing the scope after the page has rendered:
+```
+<!DOCTYPE html>
+<html>
+  <head>
+  <!-- Include notpl.min.js -->
+  <script src="../notpl.js"></script>
+  <script>
+    // Create the scope
+    var scope = { x: "foo" } 
+    var template;
+    
+    // Render the page, grab the template using the callback:
+    notpl({}, scope,
+      function (error, tpl) {
+        template = tpl;
+      },
+      function() {
+        /* Do some error handling */
+        return "Oops. Something went wrong."
+      }
+    );
+
+    // Create a function to change the scope after 2 seconds...
+    function changeScope() { 
+      
+      setTimeout(function () {
+        
+        scope.x = "bar";
+        // Do something with the rendered page...
+        // We could get fancy and do some animation here or something:
+        document.documentElement.innerHTML = template.render();
+
+      }, 2000);
+
+    } // End changeScope();
+  </script>
+  </head>
+  <body onload="changeScope()" id="<$ print('body-id'); $>">
+    This is the body text.
+    <$ print(scope.x); $>
+  </body>
+</html>
+```
+
+| *Page Results Initially* | *Page Results After 2 Seconds* |
+| ------------------------ | ------------------------------ |
+| This is the body text. foo | This is the body text. bar |
+
+---
+
+### <a name="functions"></a>NoTpl Helper Functions
+Within each template NoTpl provides a few pre-defined helper functions. **Do not reassign these variables!** Doing so could potentially break a template.
+
+- **print(string)**:
+  * Output *string* to the template. Works just like `print` or `echo` in php.
+- **echo(string)**:
+  * Alias for `print`
+- **render(templateFilename, renderOptions, scope)**
+  * Render another template from within this template. Note that the scope from the current template will be unavailable to the new template unless you explicitly pass it the `scope` object.
 
 
 
