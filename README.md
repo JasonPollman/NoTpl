@@ -38,9 +38,10 @@ NoTpl aims to do just that with Node & JavaScript.
 ## <a name="updates"></a>Updates:
  * 8/21/14
   - Bugfixes
+    * Added [client-side documentation](#use-client)
     * Fixed a bug that prevented changing the delimiters between renders.
     * Forced full render when delimiters are changed.
-    * Fixed an bug that started parsing when the delimiter was found within quotes.
+    * Fixed a bug that started parsing when the delimiter was found within quotes.
     * Testing for server-side (node) use.
  * 8/20/14
   - **Added support for client side rendering.**
@@ -50,7 +51,7 @@ NoTpl aims to do just that with Node & JavaScript.
     * Fixed setting 'options.code = true' from throwing error.
     * Fixed an bug that gave syntax errors when using the '//' comment notation.
     * Fixed detection of mismatched open/closing delimiters.
-  - Documentation for client side coming soon.
+  - ~~Documentation for client side coming soon.~~
 
 ## <a name="about"></a>About NoTpl:
 Most JavaScript template engines require a special "templating syntax." Lexing and parsing these special syntaxes takes execution time and requires you to learn new markup.
@@ -473,6 +474,7 @@ A list of keys for the 'options' object.
 * Better Error Handling:
   - Figure out a way to print template line numbers in thrown errors.
   - Better error detection/repair.
+* ~~**Support for client-side template rendering**~~
 * Figure out a way to make the arguments `print`,`render`, and `echo` un-reassignable (immutable).
 * Fix HTMLEscape() function (as of now, subsequent renders will "double escape" tokens turning the already escaped `&amp;` into `&amp;amp;`, for example... so escaping is currently unenabled.)
 
